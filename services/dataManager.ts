@@ -248,7 +248,7 @@ export const exportDataToCSV = (data: AppData) => {
   // Map transactions to rows
   const rows = data.transactions.map(tx => {
     const dateObj = new Date(tx.timestamp);
-    const date = dateObj.toLocaleDateString();
+    const date = dateObj.toLocaleDateString('en-GB');
     const time = dateObj.toLocaleTimeString();
     
     return [

@@ -524,7 +524,7 @@ export default function App() {
           </form>
           
           <p className="text-center text-slate-400 text-xs mt-8 font-medium">
-            &copy; 2024 Oxytrack System
+            &copy; {new Date().getFullYear()} Oxytrack System
           </p>
         </div>
       </MobileWrapper>
@@ -815,7 +815,7 @@ export default function App() {
                         </div>
                         <div>
                           <div className="font-bold text-slate-900">{tx.customerName}</div>
-                          <div className="text-xs font-semibold text-slate-400">{new Date(tx.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                          <div className="text-xs font-semibold text-slate-400">{new Date(tx.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -1162,7 +1162,7 @@ export default function App() {
                               {tx.type === TransactionType.OUTGOING ? 'Delivered' : 'Returned'}
                             </div>
                             <div className="text-sm font-bold text-slate-400">
-                               {new Date(tx.timestamp).toLocaleString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric', hour: '2-digit', minute:'2-digit'})}
+                               {new Date(tx.timestamp).toLocaleString('en-GB', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'})}
                             </div>
                           </div>
                         </div>
