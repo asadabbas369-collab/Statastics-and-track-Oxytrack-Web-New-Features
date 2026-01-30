@@ -1,7 +1,7 @@
 import { AppData, Customer, Transaction, BottleType } from '../types';
 import { INITIAL_COUNTS } from '../constants';
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, onValue, remove } from 'firebase/database';
+import { getDatabase, ref, set, onValue, remove, runTransaction } from 'firebase/database';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
 
 // --- Local Storage Configuration ---
@@ -88,6 +88,54 @@ export const subscribeToRemoteData = (onDataReceived: (data: AppData) => void) =
   return unsubscribe;
 };
 
+// Helper to compare and merge arrays of entities (3-way merge)
+// Preserves items added by remote that local hasn't seen yet
+const mergeArrays = <T extends { id: string }>(base: T[], remote: T[], local: T[]): T[] => {
+  const baseMap = new Map(base.map(i => [i.id, i]));
+  const remoteMap = new Map(remote.map(i => [i.id, i]));
+  const localMap = new Map(local.map(i => [i.id, i]));
+  
+  const allIds = new Set([...remoteMap.keys(), ...localMap.keys()]);
+  const merged: T[] = [];
+
+  allIds.forEach(id => {
+    const inBase = baseMap.has(id);
+    const inRemote = remoteMap.has(id);
+    const inLocal = localMap.has(id);
+
+    if (inLocal) {
+        const localItem = localMap.get(id)!;
+        const baseItem = baseMap.get(id);
+        const remoteItem = remoteMap.get(id);
+
+        // If local is untouched from base but remote changed, accept remote update
+        if (inRemote && baseItem) {
+            const localStr = JSON.stringify(localItem);
+            const baseStr = JSON.stringify(baseItem);
+            
+            if (localStr === baseStr) {
+                 // Local didn't change it. Did remote?
+                 if (JSON.stringify(remoteItem) !== baseStr) {
+                     merged.push(remoteItem!);
+                     return;
+                 }
+            }
+        }
+        // Otherwise Local wins (Local changed it, or Conflict where LWW prefers Local)
+        merged.push(localItem);
+    } else {
+        // Not in local.
+        // If in Remote and NOT in Base -> Remote Added it. Keep it.
+        // If in Remote and IN Base -> Local Deleted it. Drop it.
+        if (inRemote && !inBase) {
+            merged.push(remoteMap.get(id)!);
+        }
+    }
+  });
+
+  return merged;
+};
+
 export const pushToRemoteData = async (data: AppData): Promise<void> => {
   // Don't push if it matches what we just received to avoid loops
   const currentJSON = JSON.stringify(data);
@@ -98,9 +146,45 @@ export const pushToRemoteData = async (data: AppData): Promise<void> => {
   const dataRef = ref(db, DB_REF_PATH);
   
   try {
-      await set(dataRef, data);
+      await runTransaction(dataRef, (currentData) => {
+        if (currentData === null) {
+            return data; // Initial create if DB empty
+        }
+        
+        // 1. Normalize Remote Data
+        const toArray = (obj: any): any[] => {
+            if (!obj) return [];
+            if (Array.isArray(obj)) return obj;
+            return Object.values(obj);
+        };
+        
+        const remote: AppData = {
+            customers: toArray(currentData.customers),
+            transactions: toArray(currentData.transactions),
+            version: currentData.version || 1,
+            storeLimits: currentData.storeLimits || { ...INITIAL_COUNTS }
+        };
+
+        // 2. Parse Base Data (Last known state)
+        let base: AppData = { customers: [], transactions: [], version: 0, storeLimits: { ...INITIAL_COUNTS } };
+        try {
+            if (lastReceivedJSON) base = JSON.parse(lastReceivedJSON);
+        } catch(e) {}
+
+        // 3. Merge
+        const mergedCustomers = mergeArrays(base.customers, remote.customers, data.customers);
+        const mergedTransactions = mergeArrays(base.transactions, remote.transactions, data.transactions);
+        
+        // 4. Return Merged State
+        return {
+            customers: mergedCustomers,
+            transactions: mergedTransactions,
+            version: (remote.version || 0) + 1,
+            storeLimits: data.storeLimits // For settings, we let local overwrite
+        };
+      });
   } catch (err: any) {
-      console.warn("Offline: Data queued for sync.", err.message);
+      console.warn("Sync failed or offline:", err.message);
   }
 };
 
@@ -110,7 +194,6 @@ export const clearRemoteData = async (): Promise<void> => {
   // Reset tracking so next sync is accepted
   lastReceivedJSON = ''; 
   // We explicitly set the structure to empty arrays instead of removing the node.
-  // This prevents 'null' issues and ensures the structure remains valid.
   await set(dataRef, {
     customers: {}, // Empty object acts as empty list in Firebase
     transactions: {}, 

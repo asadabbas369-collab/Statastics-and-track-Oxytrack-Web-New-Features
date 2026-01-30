@@ -45,7 +45,8 @@ import {
   CloudCheckIcon,
   CloudSyncIcon,
   TrashIcon,
-  TrendUpIcon
+  TrendUpIcon,
+  CloudIcon
 } from './components/Icons';
 
 // UI Components
@@ -1301,6 +1302,45 @@ export default function App() {
              </Card>
 
              <Card>
+               <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                    <CloudIcon className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-900">Storage Health</h3>
+               </div>
+               
+               <div className="space-y-4">
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                     <div className="bg-slate-50 p-3 rounded-2xl">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">TOTAL SPACE</div>
+                        <div className="text-xl font-extrabold text-slate-900">1 GB</div>
+                     </div>
+                     <div className="bg-slate-50 p-3 rounded-2xl">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">USED</div>
+                        <div className="text-xl font-extrabold text-slate-900">
+                           {((JSON.stringify(data).length) / 1024).toFixed(2)} KB
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Usage Bar */}
+                  <div>
+                     <div className="flex justify-between text-[10px] font-bold mb-1.5">
+                        <span className="text-slate-400">Plan Usage</span>
+                        <span className="text-green-600">{(JSON.stringify(data).length / (1024 * 1024 * 1024) * 100).toFixed(6)}%</span>
+                     </div>
+                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 rounded-full w-[1%]"></div>
+                     </div>
+                     <p className="text-[10px] text-slate-400 mt-2 font-medium">
+                        At 30 entries/day, you have ~200 years of storage remaining.
+                     </p>
+                  </div>
+               </div>
+             </Card>
+
+             <Card>
                <h3 className="font-bold text-lg mb-2">Reports & Backup</h3>
                <div className="space-y-4">
                  <Button variant="black" onClick={() => exportDataToCSV(data)} className="w-full">
@@ -1308,6 +1348,16 @@ export default function App() {
                  </Button>
 
                  <div className="h-px bg-slate-100 w-full"></div>
+                 
+                 <div className="bg-yellow-50 border border-yellow-100 p-3 rounded-xl flex gap-3 items-start">
+                    <div className="text-yellow-600 mt-0.5"><CloudSyncIcon className="w-4 h-4" /></div>
+                    <div>
+                        <h4 className="text-xs font-bold text-yellow-800 uppercase tracking-wide mb-1">RECOMMENDED</h4>
+                        <p className="text-xs text-yellow-700 font-medium leading-relaxed">
+                           Since you are on the free plan, create a backup once a week to prevent data loss.
+                        </p>
+                    </div>
+                 </div>
 
                  <Button variant="outline" onClick={() => exportDataToJSON(data)} className="w-full">
                    <DownloadIcon className="w-5 h-5" /> Backup Data (JSON)
@@ -1344,7 +1394,7 @@ export default function App() {
              </Card>
 
              <div className="text-center text-xs font-bold text-slate-300 mt-10 uppercase tracking-widest">
-               Oxytrack v2.1
+               Oxytrack v2.2
              </div>
           </div>
         )}
