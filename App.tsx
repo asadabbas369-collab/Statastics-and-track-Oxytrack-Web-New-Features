@@ -790,11 +790,20 @@ export default function App() {
 
               <div className="bg-white rounded-3xl p-2 shadow-sm border border-slate-50">
                 {data.transactions.slice(0, 10).map((tx, idx) => {
-                  // Calculate net change of biggest item to display summary
-                  const entries = Object.entries(tx.items) as [BottleType, number][];
-                  const maxEntry = entries.sort((a, b) => b[1] - a[1])[0];
-                  const amount = maxEntry ? maxEntry[1] : 0;
-                  const typeLabel = maxEntry ? BOTTLE_CONFIG[maxEntry[0]].short : '';
+                  // Calculate total amount across all bottle types in this transaction
+                  const activeEntries = (Object.entries(tx.items) as [BottleType, number][]).filter(([_, count]) => count > 0);
+                  const totalAmount = activeEntries.reduce((acc, [_, count]) => acc + count, 0);
+                  
+                  // Determine display label
+                  let typeLabel = '';
+                  if (activeEntries.length === 0) {
+                      typeLabel = '-';
+                  } else if (activeEntries.length === 1) {
+                      typeLabel = BOTTLE_CONFIG[activeEntries[0][0]].short;
+                  } else {
+                      typeLabel = 'Bottles'; // Multiple types mixed
+                  }
+
                   const isOut = tx.type === TransactionType.OUTGOING;
 
                   return (
@@ -810,7 +819,7 @@ export default function App() {
                       </div>
                       <div className="text-right">
                         <div className={`font-bold text-lg ${isOut ? 'text-bonny-red' : 'text-green-500'}`}>
-                          {isOut ? '+' : '-'}{amount}
+                          {isOut ? '+' : '-'}{totalAmount}
                         </div>
                         <div className="text-[10px] font-bold text-slate-400 uppercase">{typeLabel}</div>
                       </div>
