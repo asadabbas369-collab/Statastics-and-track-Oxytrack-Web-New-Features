@@ -941,6 +941,151 @@ export default function App() {
           </div>
         )}
 
+        {/* New Customer View */}
+        {view === 'NEW_CUSTOMER' && (
+          <div className="p-6 pt-6">
+             <Card>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">Customer Name</label>
+                    <input 
+                      type="text" 
+                      value={newCustomerName}
+                      onChange={e => setNewCustomerName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-bonny-red"
+                      placeholder="e.g. John Doe"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">Phone Number</label>
+                    <input 
+                      type="tel" 
+                      value={newCustomerPhone}
+                      onChange={e => setNewCustomerPhone(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-bonny-red"
+                      placeholder="e.g. 555-0123"
+                    />
+                  </div>
+                  <div className="pt-4">
+                    <Button onClick={handleCreateCustomer} className="w-full !py-4">
+                       <UserPlusIcon className="w-5 h-5" /> Create Customer
+                    </Button>
+                  </div>
+                </div>
+             </Card>
+          </div>
+        )}
+
+        {/* Customer Detail View */}
+        {view === 'CUSTOMER_DETAIL' && (
+          !selectedCustomer ? (
+            <div className="p-12 text-center">
+              <div className="text-slate-400 font-bold">No customer selected</div>
+              <Button variant="ghost" onClick={() => setView('CUSTOMERS_LIST')} className="mt-4">Go Back</Button>
+            </div>
+          ) : (
+          <div className="p-6 pt-4 space-y-8">
+            <div className="text-center pb-2 pt-4">
+               <h2 className="text-2xl font-extrabold text-slate-900 flex items-center justify-center gap-3">
+                 {selectedCustomer.name} 
+                 <PencilIcon className="w-6 h-6 text-slate-300 cursor-pointer hover:text-slate-500 transition-colors" />
+               </h2>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-5">
+               {/* Oxygen Summary - Updated Style */}
+               <div className="bg-white rounded-[2rem] p-8 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-slate-50">
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-bonny-red"></div>
+                  <div className="text-[11px] font-extrabold text-bonny-red uppercase tracking-widest mb-2">OXYGEN TOTAL</div>
+                  <div className="text-4xl font-extrabold text-slate-900 mb-1 leading-none">
+                    {selectedCustomer.balance[BottleType.OXYZONE_LARGE] + selectedCustomer.balance[BottleType.OXYZONE_SMALL]}
+                  </div>
+                  <div className="text-sm font-bold text-slate-400">cyl</div>
+               </div>
+
+               {/* CO2 Summary - Updated Style */}
+               <div className="bg-white rounded-[2rem] p-8 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-slate-50">
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-400"></div>
+                  <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">CO2 TOTAL</div>
+                  <div className="text-4xl font-extrabold text-slate-900 mb-1 leading-none">
+                    {selectedCustomer.balance[BottleType.CO2_LARGE] + selectedCustomer.balance[BottleType.CO2_SMALL]}
+                  </div>
+                  <div className="text-sm font-bold text-slate-400">cyl</div>
+               </div>
+            </div>
+
+            <div className="relative">
+              <div className="flex items-center justify-center mb-8">
+                 <div className="h-px bg-slate-200 w-full"></div>
+                 <span className="px-4 text-xs font-bold text-slate-400 tracking-widest uppercase bg-transparent whitespace-nowrap">HISTORY</span>
+                 <div className="h-px bg-slate-200 w-full"></div>
+              </div>
+
+              {/* Timeline */}
+              <div className="space-y-0 relative border-l-2 border-slate-100 ml-4 pl-8 pb-10">
+                {data.transactions
+                  .filter(t => t.customerId === selectedCustomer.id)
+                  .map(tx => (
+                    <div key={tx.id} className="mb-8 relative group">
+                      {/* Timeline Dot */}
+                      <div className={`absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-white ${tx.type === TransactionType.OUTGOING ? 'bg-bonny-red' : 'bg-green-500'}`}></div>
+                      
+                      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-50 relative">
+                        {/* Edit/Delete Actions */}
+                        <div className="absolute top-4 right-4 flex gap-2 z-10">
+                           <button 
+                             onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditTransaction(tx);
+                             }}
+                             className="p-1.5 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                           >
+                              <PencilIcon className="w-4 h-4" />
+                           </button>
+                           <button 
+                             onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTransaction(tx.id);
+                             }}
+                             className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                           >
+                              <TrashIcon className="w-4 h-4" />
+                           </button>
+                        </div>
+
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className={`inline-block px-2 py-1 rounded text-[10px] font-extrabold uppercase tracking-wide mb-1 ${tx.type === TransactionType.OUTGOING ? 'bg-rose-50 text-bonny-red' : 'bg-green-50 text-green-600'}`}>
+                              {tx.type === TransactionType.OUTGOING ? 'Delivered' : 'Returned'}
+                            </div>
+                            <div className="text-sm font-bold text-slate-400">
+                               {new Date(tx.timestamp).toLocaleString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric', hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 flex-wrap pr-16">
+                          {(Object.keys(tx.items) as BottleType[]).map(type => {
+                            if (tx.items[type] === 0) return null;
+                            const config = BOTTLE_CONFIG[type];
+                            return (
+                              <span key={type} className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 ${config.bgLight} ${config.text}`}>
+                                <span className="text-lg">{tx.items[type]}</span> × {config.short} ({config.sub})
+                              </span>
+                            );
+                          })}
+                        </div>
+                        {tx.note && <div className="mt-2 text-xs text-slate-400 italic">Note: {tx.note}</div>}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+          )
+        )}
+
         {/* New/Edit Transaction View */}
         {(view === 'NEW_TRANSACTION' || view === 'EDIT_TRANSACTION') && selectedCustomer && (
           <div className="p-6 pt-2 pb-32">
