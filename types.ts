@@ -54,4 +54,5 @@ export type ViewState =
   | 'EDIT_TRANSACTION'
   | 'NEW_CUSTOMER'
   | 'SETTINGS'
-  | 'INVENTORY_DETAIL';
+  | 'INVENTORY_DETAIL'
+  | 'DAILY_ACTIVITY';

@@ -9,36 +9,36 @@ export const INITIAL_COUNTS: InventoryCounts = {
 
 export const BOTTLE_CONFIG = {
   [BottleType.OXYZONE_LARGE]: { 
-    label: 'Oxygen (STD)', 
+    label: 'Oxygen (45KG)', 
     short: 'Oxygen',
-    sub: 'Standard',
+    sub: '45KG',
     color: 'bg-rose-500', 
     text: 'text-rose-500', 
     bgLight: 'bg-rose-50',
     iconColor: 'text-white'
   },
   [BottleType.OXYZONE_SMALL]: { 
-    label: 'Oxygen (SML)', 
+    label: 'Oxygen (30KG)', 
     short: 'Oxygen',
-    sub: 'Small',
+    sub: '30KG',
     color: 'bg-rose-400', 
     text: 'text-rose-400',
     bgLight: 'bg-rose-50',
     iconColor: 'text-white' 
   },
   [BottleType.CO2_LARGE]: { 
-    label: 'CO2 (STD)', 
+    label: 'CO2 (45KG)', 
     short: 'CO2',
-    sub: 'Standard',
+    sub: '45KG',
     color: 'bg-slate-600', 
     text: 'text-slate-600',
     bgLight: 'bg-slate-100',
     iconColor: 'text-white' 
   },
   [BottleType.CO2_SMALL]: { 
-    label: 'CO2 (SML)', 
+    label: 'CO2 (30KG)', 
     short: 'CO2',
-    sub: 'Small',
+    sub: '30KG',
     color: 'bg-slate-500', 
     text: 'text-slate-500',
     bgLight: 'bg-slate-100',

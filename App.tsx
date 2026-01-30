@@ -77,6 +77,7 @@ export default function App() {
   const [view, setView] = useState<ViewState>('LOGIN');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedBottleType, setSelectedBottleType] = useState<BottleType | null>(null);
+  const [dailyActivityType, setDailyActivityType] = useState<TransactionType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Auth State
@@ -479,7 +480,7 @@ export default function App() {
               <BoxIcon className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">
-              Welcome Back
+              Bonny
             </h1>
             <p className="text-slate-400 font-medium">Sign in to manage inventory</p>
           </div>
@@ -620,6 +621,22 @@ export default function App() {
             </div>
           )}
 
+          {view === 'DAILY_ACTIVITY' && (
+             <div className="flex justify-between items-center">
+                <button 
+                onClick={() => {
+                    setView('DASHBOARD');
+                    setDailyActivityType(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors"
+                >
+                <ArrowLeftIcon className="w-6 h-6" />
+                </button>
+                <h2 className="text-lg font-bold">Today's {dailyActivityType === TransactionType.OUTGOING ? 'Deliveries' : 'Returns'}</h2>
+                <div className="w-6"></div>
+             </div>
+          )}
+
           {(view === 'CUSTOMER_DETAIL' || view === 'NEW_TRANSACTION' || view === 'EDIT_TRANSACTION' || view === 'NEW_CUSTOMER') && (
             <div className="flex justify-between items-center">
               <button 
@@ -677,12 +694,24 @@ export default function App() {
                  <h2 className="text-xs font-bold text-slate-500 tracking-widest uppercase">Today's Pulse</h2>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                 <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-50 flex flex-col items-center justify-center">
+                 <div 
+                    onClick={() => {
+                        setDailyActivityType(TransactionType.OUTGOING);
+                        setView('DAILY_ACTIVITY');
+                    }}
+                    className="bg-white rounded-3xl p-5 shadow-sm border border-slate-50 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all hover:shadow-md"
+                 >
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">DELIVERED</div>
                     <div className="text-4xl font-extrabold text-bonny-red">{getDailyStats().delivered}</div>
                     <div className="text-xs font-bold text-rose-300 mt-1">Bottles</div>
                  </div>
-                 <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-50 flex flex-col items-center justify-center">
+                 <div 
+                    onClick={() => {
+                        setDailyActivityType(TransactionType.INCOMING);
+                        setView('DAILY_ACTIVITY');
+                    }}
+                    className="bg-white rounded-3xl p-5 shadow-sm border border-slate-50 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all hover:shadow-md"
+                 >
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">RETURNED</div>
                     <div className="text-4xl font-extrabold text-green-600">{getDailyStats().returned}</div>
                     <div className="text-xs font-bold text-green-600 mt-1">Bottles</div>
@@ -721,12 +750,12 @@ export default function App() {
                          </div>
                          <div className="text-right">
                             <div className="text-2xl font-extrabold text-slate-900">{distributed}</div>
-                            <div className="text-[9px] font-bold text-slate-400 uppercase">With Clients</div>
+                            <div className="text-[8px] font-bold text-slate-400 uppercase">With Clients</div>
                          </div>
                        </div>
                        
                        <div>
-                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{config.label}</div>
+                         <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">{config.label}</div>
                          {limit > 0 ? (
                            <div className="mt-2">
                              <div className="flex justify-between text-[10px] font-bold mb-1">
@@ -760,7 +789,7 @@ export default function App() {
               </div>
 
               <div className="bg-white rounded-3xl p-2 shadow-sm border border-slate-50">
-                {data.transactions.slice(0, 5).map((tx, idx) => {
+                {data.transactions.slice(0, 10).map((tx, idx) => {
                   // Calculate net change of biggest item to display summary
                   const entries = Object.entries(tx.items) as [BottleType, number][];
                   const maxEntry = entries.sort((a, b) => b[1] - a[1])[0];
@@ -769,7 +798,7 @@ export default function App() {
                   const isOut = tx.type === TransactionType.OUTGOING;
 
                   return (
-                    <div key={tx.id} className={`flex items-center justify-between p-4 ${idx !== data.transactions.slice(0,5).length-1 ? 'border-b border-slate-50' : ''}`}>
+                    <div key={tx.id} className={`flex items-center justify-between p-4 ${idx !== data.transactions.slice(0,10).length-1 ? 'border-b border-slate-50' : ''}`}>
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-2xl bg-rose-50 text-bonny-red flex items-center justify-center">
                           <ArrowUpRightIcon className={`w-5 h-5 transform ${isOut ? '' : 'rotate-180'}`} />
@@ -794,6 +823,69 @@ export default function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Daily Activity List View */}
+        {view === 'DAILY_ACTIVITY' && dailyActivityType && (
+            <div className="p-6 pt-2">
+                <div className="space-y-4">
+                    {data.transactions
+                        .filter(tx => {
+                            const startOfDay = new Date();
+                            startOfDay.setHours(0,0,0,0);
+                            return tx.type === dailyActivityType && tx.timestamp >= startOfDay.getTime();
+                        })
+                        .sort((a, b) => b.timestamp - a.timestamp)
+                        .map(tx => {
+                            const total = (Object.values(tx.items) as number[]).reduce((a, b) => a + b, 0);
+                            return (
+                                <div key={tx.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col gap-3">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${dailyActivityType === TransactionType.OUTGOING ? 'bg-bonny-red' : 'bg-green-500'}`}>
+                                                {getInitials(tx.customerName)}
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-slate-900">{tx.customerName}</div>
+                                                <div className="text-xs text-slate-400 font-semibold">{new Date(tx.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                                            </div>
+                                        </div>
+                                        <div className={`px-3 py-1 rounded-lg text-sm font-bold ${dailyActivityType === TransactionType.OUTGOING ? 'bg-rose-50 text-bonny-red' : 'bg-green-50 text-green-600'}`}>
+                                            {total} Bottles
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex gap-2 flex-wrap">
+                                        {(Object.keys(tx.items) as BottleType[]).map(type => {
+                                            if (tx.items[type] === 0) return null;
+                                            const config = BOTTLE_CONFIG[type];
+                                            return (
+                                                <span key={type} className={`px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 bg-slate-50 text-slate-600 border border-slate-100`}>
+                                                    {tx.items[type]} × {config.label}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                    {tx.note && <div className="text-xs text-slate-400 italic bg-slate-50 p-2 rounded-lg">"{tx.note}"</div>}
+                                </div>
+                            );
+                        })
+                    }
+                    {data.transactions.filter(tx => {
+                            const startOfDay = new Date();
+                            startOfDay.setHours(0,0,0,0);
+                            return tx.type === dailyActivityType && tx.timestamp >= startOfDay.getTime();
+                    }).length === 0 && (
+                        <div className="text-center py-20">
+                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                <BoxIcon className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-slate-500 font-bold mb-1">No transactions found</h3>
+                            <p className="text-slate-400 text-sm">No {dailyActivityType === TransactionType.OUTGOING ? 'deliveries' : 'returns'} recorded today.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
         )}
 
         {/* Inventory Detail View */}
